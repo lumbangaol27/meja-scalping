@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Meja Scalping</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: satu kolom sempit untuk HP. Tab bawah-atas: Hitung lot, Checklist, Jurnal. Angka di huruf mono. */
+:root{
+  --bg:#f3f4f2; --surface:#ffffff; --line:#d9dcd6; --fg:#1d2420; --muted:#5e6862;
+  --accent:#8a5a00; --accent-soft:#f1e6cf; --accent-fg:#ffffff;
+  --good:#1f7a4d; --good-soft:#dcefe4; --bad:#b3372a; --bad-soft:#f6dcd8; --warn:#9a6a00; --warn-soft:#f5e7c4;
+  --font-display:"Familjen Grotesk","Segoe UI",system-ui,sans-serif;
+  --font-body:"Instrument Sans","Segoe UI",system-ui,sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#151a18; --surface:#1e2522; --line:#313a35; --fg:#e8ece8; --muted:#9aa59e;
+    --accent:#e0b04a; --accent-soft:#3a2f18; --accent-fg:#1a1405;
+    --good:#5ccf94; --good-soft:#1d3a2c; --bad:#f08577; --bad-soft:#41231f; --warn:#e8c167; --warn-soft:#3a3017;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#151a18; --surface:#1e2522; --line:#313a35; --fg:#e8ece8; --muted:#9aa59e;
+  --accent:#e0b04a; --accent-soft:#3a2f18; --accent-fg:#1a1405;
+  --good:#5ccf94; --good-soft:#1d3a2c; --bad:#f08577; --bad-soft:#41231f; --warn:#e8c167; --warn-soft:#3a3017;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:15px;line-height:1.5;
+  padding-block:16px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:480px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1{font-family:var(--font-display);font-size:26px;line-height:1.1;margin:0;letter-spacing:-.01em}
+h2{font-family:var(--font-display);font-size:17px;margin:0 0 4px}
+p{margin:0}
+.sub{color:var(--muted);font-size:13px}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+header{display:flex;flex-direction:column;gap:4px}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--surface);border:1px solid var(--line);padding:4px;border-radius:10px}
+.tabs a{text-align:center;padding:9px 4px;border-radius:7px;text-decoration:none;color:var(--muted);font-weight:600;font-size:14px}
+.tabs a[aria-current="page"]{background:var(--accent);color:var(--accent-fg)}
+.tabs a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:360px){.grid2{grid-template-columns:1fr}}
+label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted);font-weight:500;min-width:0}
+input,select{font:inherit;font-family:var(--font-mono);font-size:16px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;width:100%;min-width:0}
+input[type=text]{font-family:var(--font-body)}
+.result{border-radius:10px;padding:14px;background:var(--accent-soft);display:flex;flex-direction:column;gap:6px}
+.big{font-family:var(--font-mono);font-size:34px;font-weight:500;line-height:1;color:var(--fg)}
+.row{display:flex;justify-content:space-between;gap:12px;font-size:14px}
+.row span:first-child{color:var(--muted)}
+.note{font-size:13px;border-radius:8px;padding:10px 12px;background:var(--warn-soft);color:var(--fg)}
+.note.bad{background:var(--bad-soft)}
+.note.good{background:var(--good-soft)}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+button{font:inherit;font-weight:600;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:8px;padding:9px 12px;cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+button.small{padding:5px 9px;font-size:13px;font-weight:500;color:var(--muted)}
+.check{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-top:1px solid var(--line)}
+.check:first-of-type{border-top:0}
+.check input{width:22px;height:22px;margin-top:1px;flex:none;accent-color:var(--accent)}
+.check b{display:block;font-weight:600}
+.check span{color:var(--muted);font-size:13px}
+.status{font-family:var(--font-display);font-weight:700;padding:12px;border-radius:10px;text-align:center;font-size:16px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--bg);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.stat small{color:var(--muted);font-size:12px}
+.stat b{font-family:var(--font-mono);font-size:15px;font-weight:500;overflow-wrap:anywhere}
+.entry{display:flex;gap:10px;justify-content:space-between;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line)}
+.entry>div{min-width:0}
+.pos{color:var(--good)} .neg{color:var(--bad)}
+.tag{display:inline-block;font-size:12px;font-weight:600;padding:1px 7px;border-radius:99px;background:var(--bg);margin-right:6px}
+.empty{color:var(--muted);font-size:14px;padding:6px 0}
+footer{font-size:12px;color:var(--muted)}
+@media (prefers-reduced-motion:no-preference){.tabs a,button{transition:background .15s}}
+html{padding-top:max(env(safe-area-inset-top,0px),28px)}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Meja Scalping</h1>
+    <p class="sub">XAUUSD · M5 · sesi London dan New York (sekitar 14.00–23.00 WIB)</p>
+  </header>
+
+  <nav class="tabs" aria-label="Menu">
+    <a href="#hitung" id="t-hitung">Hitung lot</a>
+    <a href="#checklist" id="t-checklist">Checklist</a>
+    <a href="#jurnal" id="t-jurnal">Jurnal</a>
+  </nav>
+
+  <section id="v-hitung" class="panel" hidden>
+    <div>
+      <h2>Hitung ukuran lot</h2>
+      <p class="sub">Masukkan modal dan jarak stop loss. Hasilnya lot terbesar yang masih sesuai batas risikomu.</p>
+    </div>
+    <div class="grid2">
+      <label for="modal">Modal (Rp)<input id="modal" type="number" inputmode="numeric" value="250000"></label>
+      <label for="kurs">Kurs (Rp per $)<input id="kurs" type="number" inputmode="numeric" value="16500"></label>
+      <label for="risk">Risiko per transaksi (%)<input id="risk" type="number" inputmode="decimal" step="0.1" value="2"></label>
+      <label for="sl">Jarak stop loss (harga $)<input id="sl" type="number" inputmode="decimal" step="0.1" value="2"></label>
+    </div>
+    <label for="pv">Untung/rugi per 1,00 lot jika emas gerak $1 (USD)
+      <input id="pv" type="number" inputmode="decimal" step="0.01" value="1">
+    </label>
+    <div class="chips">
+      <button type="button" id="pv-cent">Akun Cent: 1</button>
+      <button type="button" id="pv-std">Akun Standard: 100</button>
+    </div>
+    <p class="sub">Angka akun Cent di atas perkiraan. Cocokkan dengan spesifikasi kontrak XAUUSD di aplikasi Exness sebelum dipakai.</p>
+    <div class="result" aria-live="polite">
+      <span class="sub">Lot maksimal</span>
+      <span class="big" id="lot">0.00</span>
+      <div class="row"><span>Uang yang siap dirisikokan</span><span class="mono" id="riskrp">–</span></div>
+      <div class="row"><span>Risiko sebenarnya di lot itu</span><span class="mono" id="realrp">–</span></div>
+      <div class="row"><span>Take profit (1,5 × SL)</span><span class="mono" id="tp">–</span></div>
+    </div>
+    <div id="lotnote"></div>
+  </section>
+
+  <section id="v-checklist" class="panel" hidden>
+    <div>
+      <h2>Checklist sebelum entry</h2>
+      <p class="sub">Centang semua. Kalau ada yang kosong, jangan masuk.</p>
+    </div>
+    <div id="checks"></div>
+    <div class="status" id="cstatus" aria-live="polite"></div>
+    <button type="button" id="creset">Kosongkan centang</button>
+  </section>
+
+  <section id="v-jurnal" class="panel" hidden>
+    <div>
+      <h2>Jurnal hari ini</h2>
+      <p class="sub" id="today"></p>
+    </div>
+    <div id="limitbox"></div>
+    <div class="stats">
+      <div class="stat"><small>Hasil hari ini</small><b id="s-pl">Rp0</b></div>
+      <div class="stat"><small>Transaksi</small><b id="s-n">0 / 5</b></div>
+      <div class="stat"><small>Menang (semua)</small><b id="s-wr">–</b></div>
+    </div>
+    <form id="form" class="panel" style="background:var(--bg);border-style:dashed">
+      <div class="grid2">
+        <label for="dir">Arah
+          <select id="dir"><option>Buy</option><option>Sell</option></select>
+        </label>
+        <label for="res">Hasil (Rp, minus jika rugi)<input id="res" type="number" inputmode="numeric" step="1" placeholder="-3000" required></label>
+      </div>
+      <label for="why">Catatan (alasan masuk)<input id="why" type="text" placeholder="Pullback ke EMA 20, candle tolak"></label>
+      <button class="primary" type="submit">Simpan transaksi</button>
+    </form>
+    <div id="list"></div>
+    <label for="lim">Batas rugi harian (% modal)<input id="lim" type="number" inputmode="decimal" step="0.5" value="2.5"></label>
+    <p class="sub">Modal untuk batas rugi diambil dari tab Hitung lot. Data jurnal tersimpan di browser ini saja.</p>
+  </section>
+
+  <footer>Alat bantu disiplin, bukan jaminan untung. Uji di akun demo dulu dan pakai uang yang siap hilang.</footer>
+</div>
+
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id)};
+  var store={get:function(k,d){try{var v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}},
+             set:function(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+  var fmtRp=function(n){var s=Math.round(Math.abs(n)).toLocaleString("id-ID");return (n<0?"-":"")+"Rp"+s};
+  var views=["hitung","checklist","jurnal"];
+
+  function route(){
+    var h=(location.hash||"").replace("#","");
+    if(views.indexOf(h)<0)h="hitung";
+    views.forEach(function(v){
+      $("v-"+v).hidden=(v!==h);
+      var t=$("t-"+v); if(v===h)t.setAttribute("aria-current","page");else t.removeAttribute("aria-current");
+    });
+  }
+  window.addEventListener("hashchange",route);
+
+  /* ---- Hitung lot ---- */
+  var inputs=["modal","kurs","risk","sl","pv"];
+  var saved=store.get("calc",{});
+  inputs.forEach(function(id){ if(saved[id]!==undefined)$(id).value=saved[id]; $(id).addEventListener("input",calc); });
+  $("pv-cent").onclick=function(){$("pv").value=1;calc()};
+  $("pv-std").onclick=function(){$("pv").value=100;calc()};
+
+  function num(id){var v=parseFloat($(id).value);return isFinite(v)?v:0}
+  function calc(){
+    var s={};inputs.forEach(function(id){s[id]=$(id).value});store.set("calc",s);
+    var modal=num("modal"),kurs=num("kurs"),risk=num("risk"),sl=num("sl"),pv=num("pv");
+    var note=$("lotnote");note.innerHTML="";
+    if(!(modal>0&&kurs>0&&risk>0&&sl>0&&pv>0)){$("lot").textContent="0.00";["riskrp","realrp","tp"].forEach(function(i){$(i).textContent="–"});renderLimit();return}
+    var riskRp=modal*risk/100, riskUsd=riskRp/kurs;
+    var rawLot=riskUsd/(sl*pv);
+    var lot=Math.floor(rawLot*100+1e-9)/100;
+    var realUsd=lot*sl*pv, realRp=realUsd*kurs;
+    $("riskrp").textContent=fmtRp(riskRp);
+    $("tp").textContent="$"+(sl*1.5).toFixed(2)+" dari entry";
+    if(lot<0.01){
+      var minRp=0.01*sl*pv*kurs;
+      $("lot").textContent="< 0.01";
+      $("realrp").textContent="Min. "+fmtRp(minRp);
+      note.innerHTML='<div class="note bad">Lot terkecil (0,01) sudah berisiko '+fmtRp(minRp)+' ('+(minRp/modal*100).toFixed(1)+'% modal), lebih besar dari batasmu. Lewati setup ini, atau pakai SL lebih dekat atau akun Cent.</div>';
+    }else{
+      $("lot").textContent=lot.toFixed(2);
+      $("realrp").textContent=fmtRp(realRp)+" ("+(realRp/modal*100).toFixed(1)+"%)";
+    }
+    renderLimit();
+  }
+
+  /* ---- Checklist ---- */
+  var items=[
+    ["Sesi ramai","Sekarang jam London atau New York (sekitar 14.00–23.00 WIB)."],
+    ["Tidak ada berita besar","Tidak dalam 15 menit sebelum atau sesudah NFP, CPI, atau keputusan Fed."],
+    ["Spread normal","Spread tidak sedang melebar dari biasanya."],
+    ["Arah jelas di M15","Harga di atas EMA 50 untuk buy, di bawahnya untuk sell. Bukan sideways."],
+    ["Pullback ke EMA 20 di M5","Harga kembali menyentuh area EMA 20, bukan mengejar harga yang sudah lari."],
+    ["Ada candle konfirmasi","Candle tutup searah tren atau punya ekor panjang menolak EMA."],
+    ["Stop loss sudah ditentukan","Di luar low/high candle pullback, dan lot dihitung dari jaraknya."],
+    ["Target minimal 1,5 × SL","Rasio untung banding rugi masih layak."],
+    ["Batas harian belum tercapai","Belum 5 transaksi, belum 2 rugi beruntun, belum kena batas rugi harian."]
+  ];
+  var cstate=store.get("checks",{});
+  function renderChecks(){
+    var box=$("checks");box.innerHTML="";
+    items.forEach(function(it,i){
+      var l=document.createElement("label");l.className="check";l.style.flexDirection="row";l.style.color="var(--fg)";
+      var c=document.createElement("input");c.type="checkbox";c.id="c"+i;c.checked=!!cstate[i];
+      c.onchange=function(){cstate[i]=c.checked;store.set("checks",cstate);status()};
+      var d=document.createElement("div");d.innerHTML="<b></b><span></span>";
+      d.firstChild.textContent=it[0];d.lastChild.textContent=it[1];
+      l.appendChild(c);l.appendChild(d);box.appendChild(l);
+    });
+    status();
+  }
+  function status(){
+    var n=items.filter(function(_,i){return cstate[i]}).length;
+    var s=$("cstatus");
+    if(n===items.length){s.textContent="Semua terpenuhi. Boleh entry.";s.style.background="var(--good-soft)";s.style.color="var(--good)"}
+    else{s.textContent=n+" dari "+items.length+" terpenuhi. Jangan masuk dulu.";s.style.background="var(--warn-soft)";s.style.color="var(--warn)"}
+  }
+  $("creset").onclick=function(){cstate={};store.set("checks",cstate);renderChecks()};
+
+  /* ---- Jurnal ---- */
+  var log=store.get("log",[]);
+  var limVal=store.get("lim",null); if(limVal!==null)$("lim").value=limVal;
+  $("lim").addEventListener("input",function(){store.set("lim",$("lim").value);renderLimit()});
+  function dayKey(d){var x=new Date(d);return x.getFullYear()+"-"+(x.getMonth()+1)+"-"+x.getDate()}
+  function todays(){var k=dayKey(Date.now());return log.filter(function(e){return dayKey(e.t)===k})}
+  $("today").textContent=new Date().toLocaleDateString("id-ID",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+
+  $("form").addEventListener("submit",function(ev){
+    ev.preventDefault();
+    var r=parseFloat($("res").value);if(!isFinite(r))return;
+    log.push({t:Date.now(),dir:$("dir").value,res:r,why:$("why").value.trim()});
+    store.set("log",log);$("res").value="";$("why").value="";renderLog();
+  });
+
+  function renderLimit(){
+    var td=todays(),pl=td.reduce(function(a,e){return a+e.res},0);
+    var limRp=num("modal")*(parseFloat($("lim").value)||0)/100;
+    var box=$("limitbox");
+    var streak=0;for(var i=td.length-1;i>=0&&td[i].res<0;i--)streak++;
+    var msg="",cls="";
+    if(limRp>0&&pl<=-limRp){msg="Batas rugi harian tercapai ("+fmtRp(-limRp)+"). Tutup aplikasi, lanjut besok.";cls="bad"}
+    else if(streak>=2){msg="Dua rugi beruntun. Berhenti hari ini.";cls="bad"}
+    else if(td.length>=5){msg="Sudah 5 transaksi. Cukup untuk hari ini.";cls="bad"}
+    else if(limRp>0){msg="Sisa ruang rugi hari ini: "+fmtRp(Math.max(0,limRp+pl))+" dari batas "+fmtRp(limRp)+".";cls=""}
+    box.innerHTML=msg?'<div class="note '+cls+'"></div>':"";
+    if(msg)box.firstChild.textContent=msg;
+  }
+  function renderLog(){
+    var td=todays(),pl=td.reduce(function(a,e){return a+e.res},0);
+    var s=$("s-pl");s.textContent=fmtRp(pl);s.className=pl>0?"pos":pl<0?"neg":"";
+    $("s-n").textContent=td.length+" / 5";
+    var wins=log.filter(function(e){return e.res>0}).length;
+    $("s-wr").textContent=log.length?Math.round(wins/log.length*100)+"% ("+log.length+")":"–";
+    var list=$("list");list.innerHTML="";
+    if(!td.length){list.innerHTML='<p class="empty">Belum ada transaksi hari ini. Catat setiap transaksi, menang atau kalah.</p>'}
+    td.slice().reverse().forEach(function(e){
+      var row=document.createElement("div");row.className="entry";
+      var left=document.createElement("div");
+      var tm=new Date(e.t).toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"});
+      var tag=document.createElement("span");tag.className="tag";tag.textContent=e.dir;
+      var meta=document.createElement("span");meta.className="sub mono";meta.textContent=tm;
+      var top=document.createElement("div");top.appendChild(tag);top.appendChild(meta);
+      var why=document.createElement("div");why.className="sub";why.textContent=e.why||"Tanpa catatan";
+      left.appendChild(top);left.appendChild(why);
+      var right=document.createElement("div");right.style.textAlign="right";
+      var amt=document.createElement("div");amt.className="mono "+(e.res>=0?"pos":"neg");amt.textContent=fmtRp(e.res);
+      var del=document.createElement("button");del.type="button";del.className="small";del.textContent="Hapus";
+      del.onclick=function(){log=log.filter(function(x){return x!==e});store.set("log",log);renderLog()};
+      right.appendChild(amt);right.appendChild(del);
+      row.appendChild(left);row.appendChild(right);list.appendChild(row);
+    });
+    renderLimit();
+  }
+
+  route();calc();renderChecks();renderLog();
+})();
+</script>
+
+</html>
